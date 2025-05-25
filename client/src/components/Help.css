@@ -1,0 +1,201 @@
+/* Your existing styles - no changes */
+
+.help-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* Animated gradient background */
+.help-container::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(270deg, #3498db, #9b59b6, #1abc9c, #e74c3c);
+  background-size: 800% 800%;
+  animation: gradientAnimation 20s ease infinite;
+  filter: brightness(0.9);
+  border-radius: 12px;
+  z-index: -1;
+  opacity: 0.6;
+}
+
+/* Floating circles for some subtle dynamic shapes */
+.help-container::after {
+  content: "";
+  position: absolute;
+  top: 20%;
+  left: 75%;
+  width: 120px;
+  height: 120px;
+  background: rgba(52, 152, 219, 0.15);
+  border-radius: 50%;
+  filter: blur(40px);
+  animation: floatCircle 6s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes floatCircle {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.15;
+  }
+  50% {
+    transform: translateY(-20px);
+    opacity: 0.3;
+  }
+}
+
+/* Headings, lists, links */
+.help-container h2 {
+  font-size: 28px;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 8px;
+}
+
+.help-container p {
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.help-container ul {
+  margin-left: 20px;
+  margin-bottom: 20px;
+}
+
+.help-container ul li {
+  margin-bottom: 8px;
+}
+
+.help-container h3 {
+  font-size: 22px;
+  margin-top: 25px;
+  color: #2980b9;
+}
+
+.stages-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.stages-table th,
+.stages-table td {
+  border: 1px solid #ddd;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.stages-table th {
+  background-color: #3498db;
+  color: #fff;
+}
+
+.stages-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.stages-table tr:hover {
+  background-color: #e1f5fe;
+}
+
+.help-link {
+  display: inline-block;
+  margin-top: 15px;
+  padding: 8px 14px;
+  background-color: #3498db;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.help-link:hover {
+  background-color: #2980b9;
+}
+
+
+/* --- ADDED: Dark Mode Styles --- */
+
+.help-container.dark {
+  background: rgba(18, 18, 18, 0.9);
+  color: #eee;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.7);
+  border: 1px solid #3b82f6;
+}
+
+.help-container.dark h2,
+.help-container.dark h3,
+.help-container.dark th {
+  color: #3b82f6;
+}
+
+.help-container.dark .stages-table th {
+  background-color: #2563eb;
+  color: #fff;
+}
+
+.help-container.dark .stages-table tr:nth-child(even) {
+  background-color: #1e293b;
+}
+
+.help-container.dark .stages-table tr:hover {
+  background-color: #334155;
+}
+
+.help-container.dark a,
+.help-container.dark .help-link {
+  color: #60a5fa;
+}
+
+/* Dark mode toggle button */
+.dark-toggle-btn {
+  cursor: pointer;
+  padding: 8px 14px;
+  margin-bottom: 20px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: background-color 0.3s;
+  user-select: none;
+}
+
+.dark-toggle-btn:hover {
+  background-color: #1e40af;
+}
+
+/* --- ADDED: Dark background outside the container --- */
+
+body, html {
+  background-color: #121212; /* Dark background outside help-container */
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}

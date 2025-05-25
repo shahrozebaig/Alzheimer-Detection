@@ -7,6 +7,7 @@ import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import PredictionForm from "./components/PredictionForm";
 import ResultsPage from "./components/ResultsPage";
+import Help from "./components/Help";  // <-- Add this import
 import "./components/Auth.css";
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword darkMode={darkMode} />} />
           <Route path="/prediction" element={<PredictionForm darkMode={darkMode} />} />
           <Route path="/results" element={<ResultsPage darkMode={darkMode} />} />
+          <Route path="/help" element={<Help darkMode={darkMode} />} />  {/* <-- New Help Route */}
         </Routes>
       </div>
     </Router>

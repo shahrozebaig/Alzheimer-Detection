@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Prediction.css";
 
-const PredictionForm = () => {
+const PredictionForm = ({ darkMode }) => {  // Added darkMode prop
   const [formData, setFormData] = useState({
     name: "",
     gender: "",
@@ -38,12 +38,15 @@ const PredictionForm = () => {
     setFormData((prevData) => ({ ...prevData, [name]: newValue }));
   };
 
-  const determineStageAndPrecautions = (mmse, cdr) => {
+  const determineStageAndPrecautions = (mmse, cdr, nwbv, etiv) => {
     let stage = "";
     let precautions = [];
 
-    if (mmse >= 24 && cdr === 0) {
-      stage = "No Dementia";
+    // Round nWBV to 3 decimal points
+    nwbv = parseFloat(parseFloat(nwbv).toFixed(3));
+
+    if (mmse >= 27 && mmse <= 29 && cdr === 0 && nwbv >= 0.75 && etiv <= 1500) {
+      stage = "No Cognitive Impairment";
       precautions = [
         "Maintain a healthy diet and exercise regularly.",
         "Engage in cognitive activities like reading and puzzles.",
@@ -51,7 +54,7 @@ const PredictionForm = () => {
         "Manage stress through meditation or social interactions.",
         "Ensure good sleep hygiene for brain health.",
       ];
-    } else if (mmse >= 20 && mmse < 24 && cdr === 0.5) {
+    } else if (mmse >= 24 && mmse < 27 && (cdr === 0 || cdr === 0.5) && nwbv >= 0.72 && etiv <= 1600) {
       stage = "Mild Cognitive Impairment (MCI)";
       precautions = [
         "Adopt a brain-healthy lifestyle with a balanced diet.",
@@ -60,7 +63,7 @@ const PredictionForm = () => {
         "Manage other health conditions like diabetes or hypertension.",
         "Stay socially active to maintain mental well-being.",
       ];
-    } else if (mmse >= 10 && mmse < 20 && cdr === 1) {
+    } else if (mmse >= 18 && mmse < 24 && (cdr === 0.5 || cdr === 1) && nwbv >= 0.65 && etiv <= 1700) {
       stage = "Mild Alzheimer's Disease";
       precautions = [
         "Consult a doctor for medical assessment and medication if needed.",
@@ -69,7 +72,7 @@ const PredictionForm = () => {
         "Encourage participation in familiar activities.",
         "Provide emotional and social support for the patient.",
       ];
-    } else if (mmse >= 5 && mmse < 10 && cdr === 2) {
+    } else if (mmse >= 10 && mmse < 18 && (cdr === 1 || cdr === 1.5) && nwbv >= 0.60 && etiv <= 1800) {
       stage = "Moderate Alzheimer's Disease";
       precautions = [
         "Ensure 24/7 supervision for safety and assistance.",
@@ -78,7 +81,7 @@ const PredictionForm = () => {
         "Encourage physical activities like walking under supervision.",
         "Provide a structured daily routine to reduce confusion.",
       ];
-    } else if (mmse < 5 && cdr === 3) {
+    } else if (mmse < 10 && cdr === 1.5 && nwbv < 0.60) {
       stage = "Severe Alzheimer's Disease";
       precautions = [
         "Full-time caregiving and medical supervision required.",
@@ -88,7 +91,7 @@ const PredictionForm = () => {
         "Use soft lighting and calming sounds to reduce agitation.",
       ];
     } else {
-      stage = "Unknown Stage";
+      stage = "Uncertain Stage";
       precautions = ["Consult a doctor for further evaluation."];
     }
 
@@ -108,16 +111,16 @@ const PredictionForm = () => {
 
     const mmseValue = parseFloat(formData.mmse);
     const cdrValue = parseFloat(formData.cdr);
+    const nwbvValue = parseFloat(formData.nwbv);
+    const etivValue = parseFloat(formData.etiv);
 
-    if (isNaN(mmseValue) || isNaN(cdrValue)) {
-      setError("Invalid input for MMSE or CDR.");
+    if (isNaN(mmseValue) || isNaN(cdrValue) || isNaN(nwbvValue) || isNaN(etivValue)) {
+      setError("Invalid input for numeric fields.");
       setLoading(false);
       return;
     }
 
-    const { stage, precautions } = determineStageAndPrecautions(mmseValue, cdrValue);
-
-    // Ensure precautions is an array before sending
+    const { stage, precautions } = determineStageAndPrecautions(mmseValue, cdrValue, nwbvValue, etivValue);
     const precautionsArray = Array.isArray(precautions) ? precautions : [precautions];
 
     try {
@@ -130,7 +133,7 @@ const PredictionForm = () => {
           ...formData,
           prediction: "Alzheimer's Prediction Based on Input",
           stage,
-          precautions: precautionsArray, // Send as an array
+          precautions: precautionsArray,
           timestamp: new Date().toISOString(),
         }),
       });
@@ -145,7 +148,7 @@ const PredictionForm = () => {
         state: {
           prediction: "Alzheimer's Prediction Based on Input",
           stage,
-          precautions: precautionsArray, // Pass as an array to results page
+          precautions: precautionsArray,
           patientDetails: formData,
         },
       });
@@ -158,7 +161,7 @@ const PredictionForm = () => {
   };
 
   return (
-    <div className="prediction-container">
+    <div className={`prediction-container ${darkMode ? "dark" : ""}`}>
       <div className="form-box">
         <h2>Alzheimer's Prediction Form</h2>
 
@@ -196,7 +199,14 @@ const PredictionForm = () => {
               <input type="number" name="etiv" value={formData.etiv} onChange={handleChange} required />
 
               <label>nWBV</label>
-              <input type="number" name="nwbv" value={formData.nwbv} onChange={handleChange} required />
+              <input
+                type="number"
+                step="0.001"
+                name="nwbv"
+                value={formData.nwbv}
+                onChange={handleChange}
+                required
+              />
 
               <label>ASF</label>
               <input type="number" name="asf" value={formData.asf} onChange={handleChange} required />
@@ -209,11 +219,13 @@ const PredictionForm = () => {
         </form>
 
         {error && <div className="error-box">{error}</div>}
+
+        <div className="help-link">
+          <a href="/help">Need help? Learn how stages are classified.</a>
+        </div>
       </div>
     </div>
   );
 };
 
 export default PredictionForm;
-
-
