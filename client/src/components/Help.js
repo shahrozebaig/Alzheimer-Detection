@@ -20,6 +20,13 @@ const Help = () => {
   return (
     <div className={`help-container ${darkMode ? "dark" : ""}`}>
       <button
+        className="back-btn"
+        onClick={() => window.history.back()}
+      >
+        Back
+      </button>
+
+      <button
         className="dark-toggle-btn"
         onClick={() => setDarkMode((prev) => !prev)}
       >

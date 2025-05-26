@@ -20,81 +20,134 @@ const Home = () => {
     <div className={`home-container ${darkMode ? "dark" : ""}`}>
       {/* Header */}
       <header className="header">
-        <div className="logo">🧠 Alzheimer's Predictor</div>
-        <nav className="nav">
-          <Link to="/login">Login</Link>
-          <Link to="/signup">Signup</Link>
-          <button onClick={toggleDarkMode} className="mode-toggle">
+        <div className="logo" tabIndex={0} aria-label="Alzheimer's Predictor logo">
+          🧠 Alzheimer's Predictor
+        </div>
+        <nav className="nav" role="navigation" aria-label="Primary navigation">
+          <Link to="/login" className="nav-link" tabIndex={0}>
+            Login
+          </Link>
+          <Link to="/signup" className="nav-link" tabIndex={0}>
+            Signup
+          </Link>
+          <button
+            onClick={toggleDarkMode}
+            className="mode-toggle"
+            aria-pressed={darkMode}
+            tabIndex={0}
+            aria-label="Toggle dark/light mode"
+          >
             {darkMode ? "☀️ Light" : "🌙 Dark"}
           </button>
         </nav>
       </header>
 
       {/* Hero Section */}
-      <section className="hero">
+      <section className="hero" aria-label="Hero section">
         <div className="hero-content">
           <h1>Predict Alzheimer’s Risk Early</h1>
           <p>Use our smart AI tool to detect the risk of Alzheimer’s before it’s too late.</p>
-          <Link to="/login" className="get-started">Get Started</Link> {/* ✅ Changed to /login */}
+          <Link to="/login" className="get-started" tabIndex={0}>
+            Get Started
+          </Link>
         </div>
-        <img src={BrainImage} alt="Brain AI" className="hero-image" />
+        <img
+          src={BrainImage}
+          alt="Illustration of a brain with AI neural network connections"
+          className="hero-image"
+          loading="lazy"
+        />
       </section>
 
       {/* Features */}
-      <section className="features">
+      <section className="features" aria-label="Features and benefits">
         <h2>Why Use Our Predictor?</h2>
         <div className="features-grid">
-          <div className="feature-card">⚡ Fast & Accurate AI</div>
-          <div className="feature-card">🧬 Science-Based Inputs</div>
-          <div className="feature-card">🔒 100% Private</div>
-          <div className="feature-card">🆓 Completely Free</div>
+          <div className="feature-card" tabIndex={0}>⚡ Fast & Accurate AI</div>
+          <div className="feature-card" tabIndex={0}>🧬 Science-Based Inputs</div>
+          <div className="feature-card" tabIndex={0}>🔒 100% Private</div>
+          <div className="feature-card" tabIndex={0}>🆓 Completely Free</div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section className="testimonials">
+      <section className="testimonials" aria-label="Testimonials from users">
         <h2>What People Are Saying</h2>
-        <div className="testimonial-card">
+        <blockquote className="testimonial-card" tabIndex={0}>
           <p>"This platform gave my family a head start in managing health. Amazing!"</p>
-          <h4>- Dr. Aisha Verma</h4>
-        </div>
-        <div className="testimonial-card">
+          <footer>- Dr. Aisha Verma</footer>
+        </blockquote>
+        <blockquote className="testimonial-card" tabIndex={0}>
           <p>"Beautiful interface and easy to use. Definitely recommend it!"</p>
-          <h4>- John Reynolds</h4>
-        </div>
+          <footer>- John Reynolds</footer>
+        </blockquote>
       </section>
 
       {/* FAQ */}
-      <section className="faq">
+      <section className="faq" aria-label="Frequently Asked Questions">
         <h2>FAQs</h2>
-        <div className="faq-item" onClick={() => toggleFAQ(1)}>
+        <div
+          className="faq-item"
+          onClick={() => toggleFAQ(1)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggleFAQ(1); }}
+          role="button"
+          tabIndex={0}
+          aria-expanded={faqOpen === 1}
+          aria-controls="faq1-content"
+          id="faq1"
+        >
           <h3>How does it work? {faqOpen === 1 ? "▲" : "▼"}</h3>
-          {faqOpen === 1 && <p>We use medical input data and AI models to analyze patterns and predict Alzheimer’s risk.</p>}
+          {faqOpen === 1 && (
+            <p id="faq1-content">
+              We use medical input data and AI models to analyze patterns and predict Alzheimer’s risk.
+            </p>
+          )}
         </div>
-        <div className="faq-item" onClick={() => toggleFAQ(2)}>
+        <div
+          className="faq-item"
+          onClick={() => toggleFAQ(2)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") toggleFAQ(2); }}
+          role="button"
+          tabIndex={0}
+          aria-expanded={faqOpen === 2}
+          aria-controls="faq2-content"
+          id="faq2"
+        >
           <h3>Is it really free? {faqOpen === 2 ? "▲" : "▼"}</h3>
-          {faqOpen === 2 && <p>Yes! This project is free for users and backed by research initiatives.</p>}
+          {faqOpen === 2 && (
+            <p id="faq2-content">
+              Yes! This project is free for users and backed by research initiatives.
+            </p>
+          )}
         </div>
       </section>
 
       {/* Contact */}
-      <section className="contact">
+      <section className="contact" aria-label="Contact form">
         <h2>Contact Us</h2>
-        <form>
-          <input type="text" placeholder="Your Name" required />
-          <input type="email" placeholder="Your Email" required />
-          <textarea placeholder="Your Message" required></textarea>
-          <button type="submit">Send</button>
+        <form noValidate>
+          <input type="text" placeholder="Your Name" required aria-label="Your Name" />
+          <input type="email" placeholder="Your Email" required aria-label="Your Email" />
+          <textarea placeholder="Your Message" required aria-label="Your Message"></textarea>
+          <button type="submit" className="submit-button">
+            Send
+          </button>
         </form>
       </section>
 
       {/* Footer */}
-      <footer className="footer">
+      <footer className="footer" role="contentinfo">
         <p>&copy; 2025 Alzheimer's Predictor. All rights reserved.</p>
-        <div className="socials">
-          <a href="https://facebook.com" target="_blank" rel="noreferrer">Facebook</a>
-          <a href="https://twitter.com" target="_blank" rel="noreferrer">Twitter</a>
-          <a href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a>
+        <div className="socials" aria-label="Social media links">
+          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" tabIndex={0}>
+            Facebook
+          </a>
+          <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" tabIndex={0}>
+            Twitter
+          </a>
+          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" tabIndex={0}>
+            Instagram
+          </a>
         </div>
       </footer>
     </div>

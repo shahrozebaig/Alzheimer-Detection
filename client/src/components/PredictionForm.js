@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Prediction.css";
 
-const PredictionForm = ({ darkMode }) => {  // Added darkMode prop
+const PredictionForm = ({ darkMode }) => {
   const [formData, setFormData] = useState({
     name: "",
     gender: "",
@@ -38,14 +38,12 @@ const PredictionForm = ({ darkMode }) => {  // Added darkMode prop
     setFormData((prevData) => ({ ...prevData, [name]: newValue }));
   };
 
-  const determineStageAndPrecautions = (mmse, cdr, nwbv, etiv) => {
+  const determineStageAndPrecautions = (mmse, cdr) => {
     let stage = "";
     let precautions = [];
 
-    // Round nWBV to 3 decimal points
-    nwbv = parseFloat(parseFloat(nwbv).toFixed(3));
-
-    if (mmse >= 27 && mmse <= 29 && cdr === 0 && nwbv >= 0.75 && etiv <= 1500) {
+    // Use only mmse and cdr for prediction logic:
+    if (mmse >= 27 && mmse <= 29 && cdr === 0) {
       stage = "No Cognitive Impairment";
       precautions = [
         "Maintain a healthy diet and exercise regularly.",
@@ -54,7 +52,7 @@ const PredictionForm = ({ darkMode }) => {  // Added darkMode prop
         "Manage stress through meditation or social interactions.",
         "Ensure good sleep hygiene for brain health.",
       ];
-    } else if (mmse >= 24 && mmse < 27 && (cdr === 0 || cdr === 0.5) && nwbv >= 0.72 && etiv <= 1600) {
+    } else if (mmse >= 24 && mmse < 27 && (cdr === 0 || cdr === 0.5)) {
       stage = "Mild Cognitive Impairment (MCI)";
       precautions = [
         "Adopt a brain-healthy lifestyle with a balanced diet.",
@@ -63,7 +61,7 @@ const PredictionForm = ({ darkMode }) => {  // Added darkMode prop
         "Manage other health conditions like diabetes or hypertension.",
         "Stay socially active to maintain mental well-being.",
       ];
-    } else if (mmse >= 18 && mmse < 24 && (cdr === 0.5 || cdr === 1) && nwbv >= 0.65 && etiv <= 1700) {
+    } else if (mmse >= 18 && mmse < 24 && (cdr === 0.5 || cdr === 1)) {
       stage = "Mild Alzheimer's Disease";
       precautions = [
         "Consult a doctor for medical assessment and medication if needed.",
@@ -72,7 +70,7 @@ const PredictionForm = ({ darkMode }) => {  // Added darkMode prop
         "Encourage participation in familiar activities.",
         "Provide emotional and social support for the patient.",
       ];
-    } else if (mmse >= 10 && mmse < 18 && (cdr === 1 || cdr === 1.5) && nwbv >= 0.60 && etiv <= 1800) {
+    } else if (mmse >= 10 && mmse < 18 && (cdr === 1 || cdr === 1.5)) {
       stage = "Moderate Alzheimer's Disease";
       precautions = [
         "Ensure 24/7 supervision for safety and assistance.",
@@ -81,7 +79,7 @@ const PredictionForm = ({ darkMode }) => {  // Added darkMode prop
         "Encourage physical activities like walking under supervision.",
         "Provide a structured daily routine to reduce confusion.",
       ];
-    } else if (mmse < 10 && cdr === 1.5 && nwbv < 0.60) {
+    } else if (mmse < 10 && cdr === 1.5) {
       stage = "Severe Alzheimer's Disease";
       precautions = [
         "Full-time caregiving and medical supervision required.",
@@ -111,16 +109,14 @@ const PredictionForm = ({ darkMode }) => {  // Added darkMode prop
 
     const mmseValue = parseFloat(formData.mmse);
     const cdrValue = parseFloat(formData.cdr);
-    const nwbvValue = parseFloat(formData.nwbv);
-    const etivValue = parseFloat(formData.etiv);
 
-    if (isNaN(mmseValue) || isNaN(cdrValue) || isNaN(nwbvValue) || isNaN(etivValue)) {
-      setError("Invalid input for numeric fields.");
+    if (isNaN(mmseValue) || isNaN(cdrValue)) {
+      setError("Invalid input for MMSE or CDR.");
       setLoading(false);
       return;
     }
 
-    const { stage, precautions } = determineStageAndPrecautions(mmseValue, cdrValue, nwbvValue, etivValue);
+    const { stage, precautions } = determineStageAndPrecautions(mmseValue, cdrValue);
     const precautionsArray = Array.isArray(precautions) ? precautions : [precautions];
 
     try {
