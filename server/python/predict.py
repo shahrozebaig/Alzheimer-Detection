@@ -1,101 +1,198 @@
-import sys
-import json
+from flask import Flask, request, jsonify, send_file
+from flask_pymongo import PyMongo
+from flask_bcrypt import Bcrypt
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from bson.objectid import ObjectId
 import joblib
-import os
-import numpy as np
+from fpdf import FPDF
+import io
+from datetime import datetime
 
-# Load the trained model (.sav)
-model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../notebooks/model1.sav'))
-model = joblib.load(model_path)
+app = Flask(__name__)
+app.secret_key = "supersecretkey"
+app.config["MONGO_URI"] = "mongodb://localhost:27017/alzheimer_db"
 
-# Read input data from Node.js as JSON
-input_data = sys.stdin.read()
-data = json.loads(input_data)
+# Initialize extensions
+mongo = PyMongo(app)
+bcrypt = Bcrypt(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
 
-# Extract values in correct order
-features = [
-    float(data["age"]),
-    float(data["mmse"]),
-    float(data["cdr"]),
-    float(data["etiv"]),
-    float(data["nwbv"]),
-    float(data["asf"])
-]
+# Load trained ML model
+model = joblib.load('model1.sav')
 
-# Convert to 2D array for model
-input_array = np.array([features])
+# User class for Flask-Login
+class User(UserMixin):
+    def __init__(self, user_id, email):
+        self.id = user_id
+        self.email = email
 
-# Make prediction
-prediction = model.predict(input_array)[0]  # Get single value
+@login_manager.user_loader
+def load_user(user_id):
+    user_data = mongo.db.users.find_one({"_id": ObjectId(user_id)})
+    if user_data:
+        return User(str(user_data["_id"]), user_data["email"])
+    return None
 
-# Helper function to determine stage and precautions
-def determine_alzheimers_stage(mmse, cdr):
-    stage = ""
-    precautions = []
+# Home
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({'message': 'Welcome to Alzheimer Prediction API'})
 
-    mmse = float(mmse)
-    cdr = float(cdr)
+# Signup
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
 
-    if mmse >= 24 and cdr == 0:
-        stage = "No Dementia"
-        precautions = [
-            "Maintain a healthy diet and exercise regularly.",
-            "Engage in cognitive activities like reading and puzzles.",
-            "Regular health check-ups to monitor cognitive function.",
-            "Manage stress through meditation or social interactions.",
-            "Ensure good sleep hygiene for brain health.",
-        ]
-    elif mmse >= 20 and mmse < 24 and cdr == 0.5:
-        stage = "Mild Cognitive Impairment (MCI)"
-        precautions = [
-            "Adopt a brain-healthy lifestyle with a balanced diet.",
-            "Engage in memory-enhancing activities like learning new skills.",
-            "Regular medical check-ups for early intervention.",
-            "Manage other health conditions like diabetes or hypertension.",
-            "Stay socially active to maintain mental well-being.",
-        ]
-    elif mmse >= 10 and mmse < 20 and cdr == 1:
-        stage = "Mild Alzheimer's Disease"
-        precautions = [
-            "Consult a doctor for medical assessment and medication if needed.",
-            "Create reminders and schedules to assist daily activities.",
-            "Ensure a safe home environment to prevent accidents.",
-            "Encourage participation in familiar activities.",
-            "Provide emotional and social support for the patient.",
-        ]
-    elif mmse >= 5 and mmse < 10 and cdr == 2:
-        stage = "Moderate Alzheimer's Disease"
-        precautions = [
-            "Ensure 24/7 supervision for safety and assistance.",
-            "Use simple communication and avoid overwhelming the patient.",
-            "Modify the home for safety, such as removing hazards.",
-            "Encourage physical activities like walking under supervision.",
-            "Provide a structured daily routine to reduce confusion.",
-        ]
-    elif mmse < 5 and cdr == 3:
-        stage = "Severe Alzheimer's Disease"
-        precautions = [
-            "Full-time caregiving and medical supervision required.",
-            "Ensure a comfortable and familiar environment.",
-            "Monitor for difficulties in swallowing and assist with eating.",
-            "Provide skin care and prevent bedsores for bedridden patients.",
-            "Use soft lighting and calming sounds to reduce agitation.",
-        ]
+    if not email or not password:
+        return jsonify({'error': 'Email and password are required'}), 400
+
+    existing_user = mongo.db.users.find_one({'email': email})
+    if existing_user:
+        return jsonify({'error': 'Email already exists'}), 400
+
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+    user_id = mongo.db.users.insert_one({'email': email, 'password': hashed_password}).inserted_id
+    return jsonify({'message': 'Signup successful', 'user_id': str(user_id)})
+
+# Login
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({'error': 'Email and password are required'}), 400
+
+    user_data = mongo.db.users.find_one({'email': email})
+    if user_data and bcrypt.check_password_hash(user_data['password'], password):
+        user = User(str(user_data['_id']), user_data['email'])
+        login_user(user)
+        return jsonify({'message': 'Login successful'})
     else:
-        stage = "Unknown Stage"
-        precautions = ["Consult a doctor for further evaluation."]
+        return jsonify({'error': 'Invalid credentials'}), 401
 
-    return stage, precautions
+# Forgot password
+@app.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json()
+    email = data.get('email')
 
-# Determine stage and precautions based on MMSE and CDR
-alzheimers_stage, precautions = determine_alzheimers_stage(data["mmse"], data["cdr"])
+    user_data = mongo.db.users.find_one({'email': email})
+    if user_data:
+        return jsonify({'message': 'Email exists. Proceed to reset password.'})
+    else:
+        return jsonify({'error': 'Email not found'}), 404
 
-# Output prediction, stage, and precautions back as JSON
-output = {
-    "prediction": prediction,
-    "stage": alzheimers_stage,
-    "precautions": precautions
-}
+# Reset password
+@app.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json()
+    email = data.get('email')
+    new_password = data.get('new_password')
 
-print(json.dumps(output))
-sys.stdout.flush()
+    if not email or not new_password:
+        return jsonify({'error': 'Email and new password are required'}), 400
+
+    hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    result = mongo.db.users.update_one({'email': email}, {'$set': {'password': hashed_password}})
+
+    if result.matched_count:
+        return jsonify({'message': 'Password reset successful'})
+    else:
+        return jsonify({'error': 'Email not found'}), 404
+
+# Prediction
+@app.route('/prediction', methods=['POST'])
+@login_required
+def prediction():
+    data = request.get_json()
+    features = data.get('features')
+
+    if not features:
+        return jsonify({'error': 'Features are required'}), 400
+
+    try:
+        prediction_result = model.predict([features])[0]
+
+        # Save prediction with timestamp
+        mongo.db.predictions.insert_one({
+            'user_id': current_user.id,
+            'user_email': current_user.email,
+            'features': features,
+            'result': int(prediction_result),
+            'timestamp': datetime.utcnow()
+        })
+
+        return jsonify({'prediction': int(prediction_result)})
+    except Exception as e:
+        return jsonify({'error': f'Prediction error: {str(e)}'}), 500
+
+# Help page – explain how predictions work
+@app.route('/help', methods=['GET'])
+def help_page():
+    return jsonify({
+        'message': 'Predictions are made using a trained ML model (model1.sav) which processes your input features and predicts the risk of Alzheimer’s disease.'
+    })
+
+# Form submission
+@app.route('/form', methods=['POST'])
+@login_required
+def form_submit():
+    data = request.get_json()
+
+    if not data:
+        return jsonify({'error': 'No form data provided'}), 400
+
+    mongo.db.forms.insert_one({
+        'user_id': current_user.id,
+        'user_email': current_user.email,
+        'form_data': data,
+        'timestamp': datetime.utcnow()
+    })
+
+    return jsonify({'message': 'Form data saved'})
+
+# Retrieve results & generate downloadable PDF report
+@app.route('/result', methods=['GET'])
+@login_required
+def get_results():
+    results = list(mongo.db.predictions.find({'user_id': current_user.id}, {'_id': 0}))
+
+    # Generate PDF report
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font('Arial', 'B', 16)
+    pdf.cell(0, 10, 'Alzheimer Prediction Report', ln=True)
+    pdf.ln(10)
+    pdf.set_font('Arial', '', 12)
+
+    if not results:
+        pdf.cell(0, 10, 'No predictions found.', ln=True)
+    else:
+        for idx, result in enumerate(results, start=1):
+            timestamp_str = result['timestamp'].strftime('%Y-%m-%d %H:%M:%S') if 'timestamp' in result else 'N/A'
+            pdf.cell(0, 10, f'Prediction {idx}:', ln=True)
+            pdf.cell(0, 10, f'  Features: {result["features"]}', ln=True)
+            pdf.cell(0, 10, f'  Result: {result["result"]}', ln=True)
+            pdf.cell(0, 10, f'  Timestamp: {timestamp_str}', ln=True)
+            pdf.ln(5)
+
+    pdf_output = io.BytesIO()
+    pdf.output(pdf_output)
+    pdf_output.seek(0)
+
+    return send_file(pdf_output, download_name='alzheimer_report.pdf', as_attachment=True, mimetype='application/pdf')
+
+# Logout
+@app.route('/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'message': 'Logout successful'})
+
+if __name__ == '__main__':
+    app.run(debug=True)
