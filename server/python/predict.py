@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, redirect, url_for
 from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -21,7 +21,7 @@ login_manager.init_app(app)
 # Load trained ML model
 model = joblib.load('model1.sav')
 
-# User class for Flask-Login
+# User class
 class User(UserMixin):
     def __init__(self, user_id, email):
         self.id = user_id
@@ -37,7 +37,133 @@ def load_user(user_id):
 # Home
 @app.route('/', methods=['GET'])
 def home():
-    return jsonify({'message': 'Welcome to Alzheimer Prediction API'})
+    return jsonify({
+        'message': 'Welcome to Alzheimer Prediction API - Home Page',
+        'action': 'Click "Get Started" to go to the Login page'
+    })
+
+# "Get Started" button simulation
+@app.route('/get-started', methods=['GET'])
+def get_started():
+    return redirect(url_for('login_page'))
+
+# Login page
+@app.route('/login-page', methods=['GET'])
+def login_page():
+    return jsonify({
+        'message': 'This is the Login Page. Submit credentials to /login endpoint.'
+    })
+
+# Signup page
+@app.route('/signup-page', methods=['GET'])
+def signup_page():
+    return jsonify({
+        'message': 'This is the Signup Page. Submit credentials to /signup endpoint.'
+    })
+
+# Help page
+@app.route('/help', methods=['GET'])
+def help_page():
+    return jsonify({
+        'message': 'Predictions are made using a trained ML model which processes your input features.',
+        'action': 'Press "Back" to return to the Prediction Form page.'
+    })
+
+# "Back" button simulation from Help to Prediction Form
+@app.route('/back-to-prediction-form', methods=['GET'])
+def back_to_prediction_form():
+    return jsonify({
+        'message': 'Returned to Prediction Form page.'
+    })
+
+# Prediction form page
+@app.route('/prediction-form-page', methods=['GET'])
+@login_required
+def prediction_form_page():
+    return jsonify({
+        'message': 'This is the Prediction Form page. Submit your features to /prediction endpoint.'
+    })
+
+# Prediction endpoint
+@app.route('/prediction', methods=['POST'])
+@login_required
+def prediction():
+    data = request.get_json()
+    features = data.get('features')
+
+    if not features:
+        return jsonify({'error': 'Features are required'}), 400
+
+    try:
+        prediction_result = model.predict([features])[0]
+        mongo.db.predictions.insert_one({
+            'user_id': current_user.id,
+            'user_email': current_user.email,
+            'features': features,
+            'result': int(prediction_result),
+            'timestamp': datetime.utcnow()
+        })
+        return jsonify({
+            'prediction': int(prediction_result),
+            'message': 'Prediction complete. View results at /result endpoint.'
+        })
+    except Exception as e:
+        return jsonify({'error': f'Prediction error: {str(e)}'}), 500
+
+# Form submission
+@app.route('/form', methods=['POST'])
+@login_required
+def form_submit():
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No form data provided'}), 400
+
+    mongo.db.forms.insert_one({
+        'user_id': current_user.id,
+        'user_email': current_user.email,
+        'form_data': data,
+        'timestamp': datetime.utcnow()
+    })
+    return jsonify({'message': 'Form data saved'})
+
+# Retrieve results & download PDF
+@app.route('/result', methods=['GET'])
+@login_required
+def get_results():
+    results = list(mongo.db.predictions.find({'user_id': current_user.id}, {'_id': 0}))
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font('Arial', 'B', 16)
+    pdf.cell(0, 10, 'Alzheimer Prediction Report', ln=True)
+    pdf.ln(10)
+    pdf.set_font('Arial', '', 12)
+
+    if not results:
+        pdf.cell(0, 10, 'No predictions found.', ln=True)
+    else:
+        for idx, result in enumerate(results, start=1):
+            timestamp_str = result['timestamp'].strftime('%Y-%m-%d %H:%M:%S') if 'timestamp' in result else 'N/A'
+            pdf.cell(0, 10, f'Prediction {idx}:', ln=True)
+            pdf.cell(0, 10, f'  Features: {result["features"]}', ln=True)
+            pdf.cell(0, 10, f'  Result: {result["result"]}', ln=True)
+            pdf.cell(0, 10, f'  Timestamp: {timestamp_str}', ln=True)
+            pdf.ln(5)
+
+    pdf_output = io.BytesIO()
+    pdf.output(pdf_output)
+    pdf_output.seek(0)
+
+    return send_file(pdf_output, download_name='alzheimer_report.pdf', as_attachment=True, mimetype='application/pdf')
+
+# "Back" button simulation from Result to Prediction Form
+@app.route('/back-to-prediction', methods=['GET'])
+def back_to_prediction():
+    return redirect(url_for('prediction_form_page'))
+
+# "Back to Home" button in Result page
+@app.route('/back-to-home', methods=['GET'])
+def back_to_home():
+    return redirect(url_for('home'))
 
 # Signup
 @app.route('/signup', methods=['POST'])
@@ -104,88 +230,6 @@ def reset_password():
         return jsonify({'message': 'Password reset successful'})
     else:
         return jsonify({'error': 'Email not found'}), 404
-
-# Prediction
-@app.route('/prediction', methods=['POST'])
-@login_required
-def prediction():
-    data = request.get_json()
-    features = data.get('features')
-
-    if not features:
-        return jsonify({'error': 'Features are required'}), 400
-
-    try:
-        prediction_result = model.predict([features])[0]
-
-        # Save prediction with timestamp
-        mongo.db.predictions.insert_one({
-            'user_id': current_user.id,
-            'user_email': current_user.email,
-            'features': features,
-            'result': int(prediction_result),
-            'timestamp': datetime.utcnow()
-        })
-
-        return jsonify({'prediction': int(prediction_result)})
-    except Exception as e:
-        return jsonify({'error': f'Prediction error: {str(e)}'}), 500
-
-# Help page – explain how predictions work
-@app.route('/help', methods=['GET'])
-def help_page():
-    return jsonify({
-        'message': 'Predictions are made using a trained ML model (model1.sav) which processes your input features and predicts the risk of Alzheimer’s disease.'
-    })
-
-# Form submission
-@app.route('/form', methods=['POST'])
-@login_required
-def form_submit():
-    data = request.get_json()
-
-    if not data:
-        return jsonify({'error': 'No form data provided'}), 400
-
-    mongo.db.forms.insert_one({
-        'user_id': current_user.id,
-        'user_email': current_user.email,
-        'form_data': data,
-        'timestamp': datetime.utcnow()
-    })
-
-    return jsonify({'message': 'Form data saved'})
-
-# Retrieve results & generate downloadable PDF report
-@app.route('/result', methods=['GET'])
-@login_required
-def get_results():
-    results = list(mongo.db.predictions.find({'user_id': current_user.id}, {'_id': 0}))
-
-    # Generate PDF report
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font('Arial', 'B', 16)
-    pdf.cell(0, 10, 'Alzheimer Prediction Report', ln=True)
-    pdf.ln(10)
-    pdf.set_font('Arial', '', 12)
-
-    if not results:
-        pdf.cell(0, 10, 'No predictions found.', ln=True)
-    else:
-        for idx, result in enumerate(results, start=1):
-            timestamp_str = result['timestamp'].strftime('%Y-%m-%d %H:%M:%S') if 'timestamp' in result else 'N/A'
-            pdf.cell(0, 10, f'Prediction {idx}:', ln=True)
-            pdf.cell(0, 10, f'  Features: {result["features"]}', ln=True)
-            pdf.cell(0, 10, f'  Result: {result["result"]}', ln=True)
-            pdf.cell(0, 10, f'  Timestamp: {timestamp_str}', ln=True)
-            pdf.ln(5)
-
-    pdf_output = io.BytesIO()
-    pdf.output(pdf_output)
-    pdf_output.seek(0)
-
-    return send_file(pdf_output, download_name='alzheimer_report.pdf', as_attachment=True, mimetype='application/pdf')
 
 # Logout
 @app.route('/logout', methods=['POST'])
