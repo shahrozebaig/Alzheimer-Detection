@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./Auth.css";
 
-const Signup = () => {
+const Signup = ({ darkMode }) => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -26,7 +26,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="auth-container dark">
+    <div className={`auth-container ${darkMode ? "dark" : ""}`}>
       <div className="auth-box">
         <h2>Sign Up</h2>
         {error && <p className="error-msg">{error}</p>}

@@ -1,15 +1,35 @@
+/* Add background to body for Help page */
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: url('../assets/result.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+body.dark-mode {
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('../assets/result.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
 /* Your existing styles - no changes */
 
 .help-container {
-  max-width: 900px;
-  margin: 40px auto;
-  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  position: relative;
   background: rgba(255, 255, 255, 0.85);
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
-  position: relative;
   z-index: 1;
   overflow: hidden;
 }
