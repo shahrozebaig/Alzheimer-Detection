@@ -14,7 +14,6 @@ const ResultsPage = () => {
     stage = "",
     precautions = [],
     patientDetails = {},
-    reportNumber = `ALZ-${Date.now().toString().slice(-6)}`,
   } = location.state || {};
 
   const precautionsList = Array.isArray(precautions)
@@ -34,16 +33,14 @@ const ResultsPage = () => {
     const buttons = document.getElementById("pdf-buttons");
     const wasDarkMode = document.body.classList.contains("dark-mode");
 
-    // Store original button styles
     const originalButtonsDisplay = buttons.style.display;
     const originalButtonsPosition = buttons.style.position;
     const originalButtonsVisibility = buttons.style.visibility;
 
-    // Instead of hiding buttons, make them invisible but maintain their space
     if (buttons) {
       buttons.style.visibility = "hidden";
       buttons.style.position = "relative";
-      buttons.style.display = "grid"; // Keep the grid layout
+      buttons.style.display = "grid";
     }
 
     if (wasDarkMode) document.body.classList.remove("dark-mode");
@@ -61,7 +58,6 @@ const ResultsPage = () => {
       console.error("Error generating PDF:", error);
       alert("An error occurred while generating the PDF.");
     } finally {
-      // Restore original button styles
       if (buttons) {
         buttons.style.visibility = originalButtonsVisibility;
         buttons.style.position = originalButtonsPosition;
@@ -84,7 +80,6 @@ const ResultsPage = () => {
 
         <div className="report-info">
           <div className="report-details">
-            <p><strong>Report No:</strong> {reportNumber}</p>
             <p><strong>Date:</strong> {currentDate}</p>
           </div>
           <div className="doctor-info">

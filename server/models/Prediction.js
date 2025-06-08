@@ -16,7 +16,6 @@ const predictionSchema = new mongoose.Schema(
     prediction: { type: String, required: true }, // Alzheimer's result (Yes/No)
     stage: { type: String, default: null }, // Stage of Alzheimer's
     precautions: { type: [String], default: [] }, // Ensure precautions is an array of strings
-    reportNumber: { type: String, required: true, unique: true }, // Unique report number for each prediction
   },
   { timestamps: true } // Automatically adds createdAt & updatedAt
 );
