@@ -14,6 +14,7 @@ const ResultsPage = () => {
     stage = "",
     precautions = [],
     patientDetails = {},
+    reportNumber = `ALZ-${Date.now().toString().slice(-6)}`,
   } = location.state || {};
 
   const precautionsList = Array.isArray(precautions)
@@ -22,12 +23,29 @@ const ResultsPage = () => {
     ? [precautions]
     : [];
 
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
   const handleDownloadPDF = async () => {
     const input = document.getElementById("pdf-content");
     const buttons = document.getElementById("pdf-buttons");
     const wasDarkMode = document.body.classList.contains("dark-mode");
 
-    if (buttons) buttons.style.display = "none";
+    // Store original button styles
+    const originalButtonsDisplay = buttons.style.display;
+    const originalButtonsPosition = buttons.style.position;
+    const originalButtonsVisibility = buttons.style.visibility;
+
+    // Instead of hiding buttons, make them invisible but maintain their space
+    if (buttons) {
+      buttons.style.visibility = "hidden";
+      buttons.style.position = "relative";
+      buttons.style.display = "grid"; // Keep the grid layout
+    }
+
     if (wasDarkMode) document.body.classList.remove("dark-mode");
 
     try {
@@ -38,18 +56,17 @@ const ResultsPage = () => {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-      // QR code generation and addition removed here
-
-      pdf.setFontSize(10);
-      pdf.text("Page 1", pdfWidth - 20, pdf.internal.pageSize.height - 10);
-
-      pdf.save("Alzheimers_Prediction_Report.pdf");
+      pdf.save("Alzheimers_Medical_Report.pdf");
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("An error occurred while generating the PDF.");
     } finally {
-      if (buttons) buttons.style.display = "flex";
+      // Restore original button styles
+      if (buttons) {
+        buttons.style.visibility = originalButtonsVisibility;
+        buttons.style.position = originalButtonsPosition;
+        buttons.style.display = originalButtonsDisplay;
+      }
       if (wasDarkMode) document.body.classList.add("dark-mode");
     }
   };
@@ -58,98 +75,111 @@ const ResultsPage = () => {
     <div className="results-container">
       <div className="results-box" id="pdf-content">
         <div className="pdf-header">
-          <img src={logo} alt="Logo" className="pdf-logo" />
-          <h2 className="pdf-title">Alzheimer's Prediction Report</h2>
+          <img src={logo} alt="Medical Logo" className="pdf-logo" />
+          <div className="header-text">
+            <h1 className="pdf-title">Alzheimer's Disease Assessment Report</h1>
+            <p className="hospital-name">Medical Diagnostic Center</p>
+          </div>
         </div>
 
-        {prediction ? (
-          <>
-            <table className="results-table">
-              <thead>
-                <tr>
-                  <th colSpan="2">Patient Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Name</td>
-                  <td>{patientDetails.name || "Not Provided"}</td>
-                </tr>
-                <tr>
-                  <td>Age</td>
-                  <td>{patientDetails.age || "Not Provided"}</td>
-                </tr>
-                <tr>
-                  <td>Gender</td>
-                  <td>{patientDetails.gender || "Not Provided"}</td>
-                </tr>
-                <tr>
-                  <td>MMSE</td>
-                  <td>{patientDetails.mmse || "Not Provided"}</td>
-                </tr>
-                <tr>
-                  <td>CDR</td>
-                  <td>{patientDetails.cdr || "Not Provided"}</td>
-                </tr>
-                <tr>
-                  <td>eTIV</td>
-                  <td>{patientDetails.etiv || "Not Provided"}</td>
-                </tr>
-                <tr>
-                  <td>nWBV</td>
-                  <td>{patientDetails.nwbv || "Not Provided"}</td>
-                </tr>
-                <tr>
-                  <td>ASF</td>
-                  <td>{patientDetails.asf || "Not Provided"}</td>
-                </tr>
-              </tbody>
-            </table>
+        <div className="report-info">
+          <div className="report-details">
+            <p><strong>Report No:</strong> {reportNumber}</p>
+            <p><strong>Date:</strong> {currentDate}</p>
+          </div>
+          <div className="doctor-info">
+            <p><strong>Authorized By:</strong> Dr. Sarah Johnson</p>
+            <p><strong>Department:</strong> Neurology</p>
+          </div>
+        </div>
 
-            <table className="results-table">
-              <thead>
-                <tr>
-                  <th colSpan="2">Prediction Outcome</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Prediction</td>
-                  <td>{prediction}</td>
-                </tr>
-                <tr>
-                  <td>Stage</td>
-                  <td>{stage}</td>
-                </tr>
-              </tbody>
-            </table>
+        <div className="report-section">
+          <h2 className="section-title">Patient Information</h2>
+          <table className="results-table">
+            <tbody>
+              <tr>
+                <td className="label">Full Name</td>
+                <td>{patientDetails.name || "Not Provided"}</td>
+                <td className="label">Age</td>
+                <td>{patientDetails.age || "Not Provided"}</td>
+              </tr>
+              <tr>
+                <td className="label">Gender</td>
+                <td>{patientDetails.gender || "Not Provided"}</td>
+                <td className="label">Report Date</td>
+                <td>{currentDate}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-            <table className="results-table">
-              <thead>
-                <tr>
-                  <th>Precautionary Measures</th>
-                </tr>
-              </thead>
-              <tbody>
-                {precautionsList.length > 0 ? (
-                  precautionsList.map((item, index) => (
-                    <tr key={index}>
-                      <td>{item}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td>No specific precautions provided.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </>
-        ) : (
-          <p className="error-message" style={{ color: 'red', fontWeight: 'bold' }}>
-            No prediction data available. Please try submitting the form again.
-          </p>
-        )}
+        <div className="report-section">
+          <h2 className="section-title">Clinical Assessment</h2>
+          <table className="results-table">
+            <tbody>
+              <tr>
+                <td className="label">MMSE Score</td>
+                <td>{patientDetails.mmse || "Not Provided"}</td>
+                <td className="label">CDR Score</td>
+                <td>{patientDetails.cdr || "Not Provided"}</td>
+              </tr>
+              <tr>
+                <td className="label">eTIV (ml)</td>
+                <td>{patientDetails.etiv || "Not Provided"}</td>
+                <td className="label">nWBV</td>
+                <td>{patientDetails.nwbv || "Not Provided"}</td>
+              </tr>
+              <tr>
+                <td className="label">ASF</td>
+                <td colSpan="3">{patientDetails.asf || "Not Provided"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="report-section">
+          <h2 className="section-title">Diagnostic Findings</h2>
+          <table className="results-table">
+            <tbody>
+              <tr>
+                <td className="label">Assessment Result</td>
+                <td>{prediction}</td>
+              </tr>
+              <tr>
+                <td className="label">Disease Stage</td>
+                <td>{stage}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="report-section">
+          <h2 className="section-title">Clinical Recommendations</h2>
+          <div className="precautions-list">
+            {precautionsList.length > 0 ? (
+              precautionsList.map((item, index) => (
+                <div key={index} className="precaution-item">
+                  <span className="bullet">•</span>
+                  <p>{item}</p>
+                </div>
+              ))
+            ) : (
+              <p className="no-precautions">No specific recommendations provided.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="report-footer">
+          <div className="signature-section">
+            <div className="signature-line"></div>
+            <p>Dr. Sarah Johnson</p>
+            <p className="signature-title">Neurologist</p>
+          </div>
+          <div className="disclaimer">
+            <p><em>This is a computer-generated report and does not require a physical signature.</em></p>
+            <p><em>For any queries, please contact our medical department.</em></p>
+          </div>
+        </div>
 
         <div className="results-buttons" id="pdf-buttons">
           <button className="back-btn" onClick={() => navigate("/")}>
@@ -157,7 +187,7 @@ const ResultsPage = () => {
           </button>
           {prediction && (
             <button className="download-button" onClick={handleDownloadPDF}>
-              Download PDF
+              Download
             </button>
           )}
         </div>

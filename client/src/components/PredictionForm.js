@@ -118,6 +118,9 @@ const PredictionForm = ({ darkMode }) => {
 
     const { stage, precautions } = determineStageAndPrecautions(mmseValue, cdrValue);
     const precautionsArray = Array.isArray(precautions) ? precautions : [precautions];
+    
+    // Generate a unique report number
+    const reportNumber = `ALZ-${Date.now().toString().slice(-6)}`;
 
     try {
       const response = await fetch("http://localhost:5000/api/predictions", {
@@ -130,6 +133,7 @@ const PredictionForm = ({ darkMode }) => {
           prediction: "Alzheimer's Prediction Based on Input",
           stage,
           precautions: precautionsArray,
+          reportNumber,
           timestamp: new Date().toISOString(),
         }),
       });
@@ -146,6 +150,7 @@ const PredictionForm = ({ darkMode }) => {
           stage,
           precautions: precautionsArray,
           patientDetails: formData,
+          reportNumber,
         },
       });
     } catch (err) {
