@@ -65,6 +65,17 @@ alzheimer-detection/
 - 🍃 MongoDB
 - 📦 npm or yarn
 
+## 🎥👀 Mp4
+
+
+
+https://github.com/user-attachments/assets/d6fa1465-7fa8-422e-b8f5-6e324e7e8f66
+
+
+    
+
+        
+
 ### ⚙️ Installation
 
 1. 📥 Clone the repository:
@@ -134,22 +145,4 @@ The project uses two trained models (`model1.sav` and `model2.sav`) for Alzheime
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details. ⚖️
-
-## 👥 Authors
-
-- 👤 Your Name - Initial work
-
-## 🙏 Acknowledgments
-
-- 🤝 Thanks to all contributors who have helped shape this project
-- 🌟 Special thanks to the open-source community for their invaluable tools and libraries
-- 👨‍⚕️ Medical professionals who provided insights and validation
-
-## 📞 Support
-
-For support, please open an issue in the GitHub repository or contact the maintainers directly. 💬
-
----
-
-Made with ❤️ for better healthcare 🏥 
+This project is licensed under the MIT License - see the LICENSE file for details. ⚖️    
